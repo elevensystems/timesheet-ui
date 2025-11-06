@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+
+# Production builds
+.next/
+out/
+build/
+dist/
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development
+
+# Cache directories
+.cache/
+.parcel-cache/
+
+# Logs
+*.log
+logs/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Package managers
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Public assets (usually don't need formatting)
+public/
+
+# Generated files
+coverage/
+.nyc_output/
+
+# Tailwind generated files
+tailwind.config.js
+
+# PostCSS config
+postcss.config.mjs
