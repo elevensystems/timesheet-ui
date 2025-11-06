@@ -38,24 +38,45 @@ interface CreateJobResponse {
   message: string;
 }
 
-const API_ENDPOINT = process.env.NEXT_PUBLIC_API_URL;
-
 /**
- * Legacy function - submits timesheet directly
- * @deprecated Use createTimesheetJob instead for better progress tracking
+ * Submits timesheet directly using Next.js API route
  */
 export async function submitTimesheet(
   data: TimesheetData
-): Promise<{ success: boolean; message: string; submittedDates?: string[] }> {
+): Promise<{ message: string; processed: number }> {
   try {
-    // Get API URL from environment variable and construct the endpoint
-    const apiUrl = `${API_ENDPOINT}/timesheet`;
-    const response = await axios.post(apiUrl, data);
+    // Parse dates string into array
+    const datesArray = data.dates
+      .split(',')
+      .map(d => d.trim())
+      .filter(Boolean);
+
+    // Prepare request body to match API route expectations
+    const requestBody = {
+      username: data.username,
+      dates: datesArray,
+      jiraInstance: data.jiraInstance,
+      tickets: data.tickets?.map(t => ({
+        ticketId: t.ticketId,
+        timeSpend: String(t.timeSpend), // API expects string
+        description: t.description,
+        typeOfWork: t.typeOfWork,
+      })),
+    };
+
+    const response = await axios.post('/api/timesheet', requestBody, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${data.token}`,
+      },
+    });
+
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(
-        error.response?.data?.message ||
+        error.response?.data?.error ||
+          error.response?.data?.message ||
           'Error submitting timesheet. Please check your connection and try again.'
       );
     }
@@ -65,40 +86,28 @@ export async function submitTimesheet(
 
 /**
  * Creates a new timesheet job for async processing
+ * Uses the Next.js API route which processes requests synchronously with delays
  * @param data Timesheet submission data
- * @returns Job ID and total tasks count
+ * @returns Simulated job response with total tasks
  */
 export async function createTimesheetJob(
   data: TimesheetData
 ): Promise<CreateJobResponse> {
   try {
-    const apiUrl = `${API_ENDPOINT}/jobs`;
+    // Call the same submitTimesheet function
+    const result = await submitTimesheet(data);
 
-    // Prepare request body
-    const requestBody = {
-      dates: data.dates,
-      jiraInstance: data.jiraInstance,
-      username: data.username,
-      tickets: data.tickets?.map(t => ({
-        ticketId: t.ticketId,
-        timeSpend: String(t.timeSpend), // Send as string to match backend expectations
-        description: t.description,
-        typeOfWork: t.typeOfWork,
-      })),
+    // Return a simulated job response to maintain compatibility with the form
+    return {
+      jobId: `job-${Date.now()}`,
+      total: result.processed,
+      message: result.message,
     };
-
-    const response = await axios.post(apiUrl, requestBody, {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${data.token}`,
-      },
-    });
-
-    return response.data.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(
-        error.response?.data?.message ||
+        error.response?.data?.error ||
+          error.response?.data?.message ||
           'Error creating job. Please check your connection and try again.'
       );
     }
@@ -107,22 +116,23 @@ export async function createTimesheetJob(
 }
 
 /**
- * Polls job status by jobId
- * @param jobId The job ID to check
- * @returns Current job status with progress
+ * Simulates job status polling for the Next.js API route
+ * Since the API processes synchronously, this returns completed status immediately
+ * @param jobId The job ID to check (not used in this implementation)
+ * @returns Completed job status
  */
 export async function getJobStatus(jobId: string): Promise<JobStatus> {
-  try {
-    const apiUrl = `${API_ENDPOINT}/jobs/status?jobId=${encodeURIComponent(jobId)}`;
-    const response = await axios.get(apiUrl);
-    return response.data.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      throw new Error(
-        error.response?.data?.message ||
-          'Error fetching job status. Please try again.'
-      );
-    }
-    throw error;
-  }
+  // Since the Next.js API route processes synchronously,
+  // we simulate immediate completion
+  return {
+    jobId,
+    total: 0,
+    processed: 0,
+    failed: 0,
+    status: 'completed',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    progress: 100,
+    errors: [],
+  };
 }
