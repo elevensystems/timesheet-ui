@@ -4,7 +4,6 @@ import React, { useMemo, useState } from 'react';
 
 import {
   BookOpen,
-  CheckCheck,
   CheckCircle,
   ChevronLeft,
   ChevronRight,
@@ -17,12 +16,10 @@ import {
   Plus,
   SquareCheckBig,
   Tags,
-  Trash2,
   UserRoundCog,
 } from 'lucide-react';
 import { ZodError, z } from 'zod';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
@@ -33,19 +30,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/components/ui/sonner';
-import { Spinner } from '@/components/ui/spinner';
 import {
   Table,
   TableBody,
@@ -65,6 +52,15 @@ import {
   sanitizeTicketId,
   sanitizeToken,
 } from '@/utils/sanitize';
+
+import FormFooter from './FormFooter';
+import InputField from './InputField';
+import ProgressBar from './ProgressBar';
+import SelectField from './SelectField';
+import SubmitButton from './SubmitButton';
+import TextAreaField from './TextAreaField';
+import TicketTable from './TicketTable';
+import type { Ticket } from './TicketTable';
 
 // Zod v4 schemas
 const Step1Schema = z.object({
@@ -142,14 +138,6 @@ function zodToFieldErrors(err: unknown, defaultKey?: string) {
     }
   }
   return result;
-}
-
-interface Ticket {
-  id: string;
-  typeOfWork: 'Create' | 'Review' | 'Study' | 'Correct' | 'Translate' | 'Test';
-  description: string;
-  timeSpend: number; // hours
-  ticketId: string;
 }
 
 // Central definition of work type metadata
@@ -460,64 +448,44 @@ const Form: React.FC = () => {
         {/* Flow 1: Setup */}
         {step === 1 && (
           <form onSubmit={handleNext} className='space-y-6'>
-            <div className='space-y-1'>
-              <Label
-                className={
-                  fieldErrors.username
-                    ? 'font-semibold text-destructive'
-                    : 'font-semibold'
+            <InputField
+              label='FPT account'
+              value={username}
+              placeholder='Insert your FPT account (E.g., ThaoLNP5)'
+              error={fieldErrors.username}
+              onChange={e => {
+                setUsername(sanitizeAccount(e.target.value));
+                if (fieldErrors.username) {
+                  setFieldErrors(prev => {
+                    const next = { ...prev } as Record<string, string>;
+                    delete next.username;
+                    return next;
+                  });
                 }
-              >
-                FPT account
-              </Label>
-              <Input
-                placeholder='Insert your FPT account (E.g., ThaoLNP5)'
-                value={username}
-                aria-invalid={fieldErrors.username ? true : undefined}
-                onChange={e => {
-                  setUsername(sanitizeAccount(e.target.value));
-                  if (fieldErrors.username) {
-                    setFieldErrors(prev => {
-                      const next = { ...prev } as Record<string, string>;
-                      delete next.username;
-                      return next;
-                    });
-                  }
-                }}
-              />
-              {fieldErrors.username && (
-                <p className='text-sm text-destructive mt-1'>
-                  {fieldErrors.username}
-                </p>
-              )}
-            </div>
+              }}
+              required
+            />
             <div className='space-y-1'>
-              <Label
-                className={
-                  fieldErrors.token
-                    ? 'font-semibold text-destructive'
-                    : 'font-semibold'
+              <InputField
+                label='Jira Token'
+                helpText={
+                  <>
+                    Click{' '}
+                    <a
+                      className='underline text-blue-600'
+                      href='https://insight.fsoft.com.vn/jira9/secure/ViewProfile.jspa'
+                      target='_blank'
+                      rel='noreferrer'
+                    >
+                      here
+                    </a>
+                    , → Then Click on Personal Access Tokens → Create Token
+                  </>
                 }
-              >
-                Jira Token
-              </Label>
-              <div className='text-sm text-muted-foreground'>
-                Click{' '}
-                <a
-                  className='underline text-blue-600'
-                  href='https://insight.fsoft.com.vn/jira9/secure/ViewProfile.jspa'
-                  target='_blank'
-                  rel='noreferrer'
-                >
-                  here
-                </a>
-                , → Then Click on Personal Access Tokens → Create Token
-              </div>
-              <Input
                 type='password'
                 placeholder='Insert your jira token'
                 value={token}
-                aria-invalid={fieldErrors.token ? true : undefined}
+                error={fieldErrors.token}
                 onChange={e => {
                   setToken(sanitizeToken(e.target.value));
                   if (fieldErrors.token) {
@@ -528,255 +496,164 @@ const Form: React.FC = () => {
                     });
                   }
                 }}
+                required
+                className='-mt-1'
               />
-              {fieldErrors.token && (
-                <p className='text-sm text-destructive mt-1'>
-                  {fieldErrors.token}
-                </p>
-              )}
             </div>
-            <div className='flex justify-between items-center'>
-              <div className='flex items-center gap-2'>
-                <Label className='font-semibold'>Jira System</Label>
-                <Select
-                  value={jiraInstance}
-                  onValueChange={v => setJiraInstance(v as 'jira9' | 'jiradc')}
-                >
-                  <SelectTrigger className='w-[140px]'>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value='jira9'>jira9</SelectItem>
-                      <SelectItem value='jiradc'>jiradc</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
+            <FormFooter align='between'>
+              <SelectField
+                label='Jira System'
+                value={jiraInstance}
+                onChange={v => setJiraInstance(v as 'jira9' | 'jiradc')}
+                options={[
+                  { value: 'jira9', label: 'jira9' },
+                  { value: 'jiradc', label: 'jiradc' },
+                ]}
+                className='w-[180px]'
+              />
               <Button type='submit'>
                 Next
                 <ChevronRight />
               </Button>
-            </div>
+            </FormFooter>
           </form>
         )}
 
         {/* Flow 2: Log Ticket (entry) */}
         {step === 2 && (
           <div className='space-y-6'>
-            <div className='space-y-1'>
-              <Label
-                className={
-                  fieldErrors.dates
-                    ? 'font-semibold text-destructive'
-                    : 'font-semibold'
+            <TextAreaField
+              label='Your Worklog Dates'
+              value={dates}
+              placeholder='E.g., 20/Aug/25, 21/Aug/25, 22/Aug/25, 25/Aug/25'
+              error={fieldErrors.dates}
+              rows={3}
+              onChange={e => {
+                setDates(sanitizeDates(e.target.value));
+                if (fieldErrors.dates) {
+                  setFieldErrors(prev => {
+                    const next = { ...prev } as Record<string, string>;
+                    delete next.dates;
+                    return next;
+                  });
                 }
-              >
-                Your Worklog Dates
-              </Label>
-              <ol className='text-sm text-muted-foreground pl-4 list-decimal space-y-1'>
-                <li>Click on your Jira Project → Project worklog</li>
-                <li>
-                  Fill in your account name and the date range, then search your
-                  missing work log dates
-                </li>
-                <li>Copy your missing work log dates</li>
-              </ol>
-              <textarea
-                className={`flex min-h-20 w-full rounded-md border bg-background px-3 py-2 text-sm resize-y ${fieldErrors.dates ? 'border-destructive' : 'border-input'}`}
-                placeholder='E.g., 20/Aug/25, 21/Aug/25, 22/Aug/25, 25/Aug/25'
-                value={dates}
-                aria-invalid={fieldErrors.dates ? true : undefined}
+              }}
+              helpText={
+                <ol className='text-sm text-muted-foreground pl-4 list-decimal space-y-1'>
+                  <li>Click on your Jira Project → Project worklog</li>
+                  <li>
+                    Fill in your account name and the date range, then search
+                    your missing work log dates
+                  </li>
+                  <li>Copy your missing work log dates</li>
+                </ol>
+              }
+              required
+            />
+            <div className='grid gap-4 md:grid-cols-2'>
+              <InputField
+                label='Ticket ID'
+                value={currentTicket.ticketId}
+                placeholder='Enter Jira Ticket (E.g., C99KBBATC2025-37)'
+                error={fieldErrors.ticketId}
                 onChange={e => {
-                  setDates(sanitizeDates(e.target.value));
-                  if (fieldErrors.dates) {
+                  setCurrentTicket({
+                    ...currentTicket,
+                    ticketId: sanitizeTicketId(e.target.value),
+                  });
+                  if (fieldErrors.ticketId) {
                     setFieldErrors(prev => {
                       const next = { ...prev } as Record<string, string>;
-                      delete next.dates;
+                      delete next.ticketId;
                       return next;
                     });
                   }
                 }}
+                required
               />
-              {fieldErrors.dates && (
-                <p className='text-sm text-destructive mt-1'>
-                  {fieldErrors.dates}
-                </p>
-              )}
-            </div>
-            <div className='grid gap-4 md:grid-cols-2'>
-              <div className='space-y-1'>
-                <Label
-                  className={
-                    fieldErrors.ticketId
-                      ? 'font-semibold text-destructive'
-                      : 'font-semibold'
-                  }
-                >
-                  Ticket ID
-                </Label>
-                <Input
-                  placeholder='Enter Jira Ticket (E.g., C99KBBATC2025-37)'
-                  value={currentTicket.ticketId}
-                  aria-invalid={fieldErrors.ticketId ? true : undefined}
-                  onChange={e => {
+              <div className='grid grid-cols-2 gap-4'>
+                <SelectField
+                  label='Type of work'
+                  value={currentTicket.typeOfWork}
+                  onChange={v => {
                     setCurrentTicket({
                       ...currentTicket,
-                      ticketId: sanitizeTicketId(e.target.value),
+                      typeOfWork: v as Ticket['typeOfWork'],
                     });
-                    if (fieldErrors.ticketId) {
+                    if (fieldErrors.typeOfWork) {
                       setFieldErrors(prev => {
                         const next = { ...prev } as Record<string, string>;
-                        delete next.ticketId;
+                        delete next.typeOfWork;
                         return next;
                       });
                     }
                   }}
+                  options={TYPE_OF_WORK_OPTIONS}
+                  error={fieldErrors.typeOfWork}
+                  placeholder='Select 1 item'
+                  required
                 />
-                {fieldErrors.ticketId && (
-                  <p className='text-sm text-destructive mt-1'>
-                    {fieldErrors.ticketId}
-                  </p>
-                )}
-              </div>
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-1'>
-                  <Label
-                    className={
-                      fieldErrors.typeOfWork
-                        ? 'font-semibold text-destructive'
-                        : 'font-semibold'
-                    }
-                  >
-                    Type of work
-                  </Label>
-                  <Select
-                    value={currentTicket.typeOfWork}
-                    onValueChange={v => {
+                <InputField
+                  label='Time Spent (hrs)'
+                  type='number'
+                  value={String(currentTicket.timeSpend || 0.5)}
+                  placeholder='0.5'
+                  error={fieldErrors.timeSpend}
+                  onChange={e => {
+                    const value = e.target.value;
+                    // Allow empty string for deletion
+                    if (value === '') {
                       setCurrentTicket({
                         ...currentTicket,
-                        typeOfWork: v as Ticket['typeOfWork'],
+                        timeSpend: 0.5,
                       });
-                      if (fieldErrors.typeOfWork) {
-                        setFieldErrors(prev => {
-                          const next = { ...prev } as Record<string, string>;
-                          delete next.typeOfWork;
-                          return next;
-                        });
-                      }
-                    }}
-                  >
-                    <SelectTrigger
-                      className='w-full'
-                      aria-invalid={fieldErrors.typeOfWork ? true : undefined}
-                    >
-                      <SelectValue placeholder='Select 1 item' />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {TYPE_OF_WORK_OPTIONS.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            <div className='flex items-center gap-2'>
-                              {opt.icon}
-                              <span>{opt.label}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className='space-y-1'>
-                  <Label
-                    className={
-                      fieldErrors.timeSpend
-                        ? 'font-semibold text-destructive'
-                        : 'font-semibold'
-                    }
-                  >
-                    Time Spent (hrs)
-                  </Label>
-                  <Input
-                    type='number'
-                    step='0.1'
-                    min='0.1'
-                    max='8'
-                    placeholder='0.5'
-                    value={currentTicket.timeSpend || 0.5}
-                    aria-invalid={fieldErrors.timeSpend ? true : undefined}
-                    onChange={e => {
-                      const value = e.target.value;
-                      // Allow empty string for deletion
-                      if (value === '') {
+                    } else {
+                      const sanitized = sanitizeHours(value);
+                      if (
+                        sanitized !== null &&
+                        sanitized !== undefined &&
+                        !isNaN(sanitized)
+                      ) {
                         setCurrentTicket({
                           ...currentTicket,
-                          timeSpend: 0.5,
-                        });
-                      } else {
-                        const sanitized = sanitizeHours(value);
-                        if (
-                          sanitized !== null &&
-                          sanitized !== undefined &&
-                          !isNaN(sanitized)
-                        ) {
-                          setCurrentTicket({
-                            ...currentTicket,
-                            timeSpend: sanitized,
-                          });
-                        }
-                      }
-                      if (fieldErrors.timeSpend) {
-                        setFieldErrors(prev => {
-                          const next = { ...prev } as Record<string, string>;
-                          delete next.timeSpend;
-                          return next;
+                          timeSpend: sanitized,
                         });
                       }
-                    }}
-                  />
-                  {fieldErrors.timeSpend && (
-                    <p className='text-sm text-destructive mt-1'>
-                      {fieldErrors.timeSpend}
-                    </p>
-                  )}
-                </div>
+                    }
+                    if (fieldErrors.timeSpend) {
+                      setFieldErrors(prev => {
+                        const next = { ...prev } as Record<string, string>;
+                        delete next.timeSpend;
+                        return next;
+                      });
+                    }
+                  }}
+                  required
+                />
               </div>
             </div>
-            <div className='space-y-1'>
-              <Label
-                className={
-                  fieldErrors.description
-                    ? 'font-semibold text-destructive'
-                    : 'font-semibold'
-                }
-              >
-                Description
-              </Label>
-              <textarea
-                className={`flex h-24 w-full rounded-md border bg-background px-3 py-2 text-sm ${fieldErrors.description ? 'border-destructive' : 'border-input'}`}
-                placeholder="Copy Jira Ticket 's description (E.g., Create project plan, do project report...)"
-                value={currentTicket.description}
-                aria-invalid={fieldErrors.description ? true : undefined}
-                onChange={e => {
-                  setCurrentTicket({
-                    ...currentTicket,
-                    description: sanitizeDescription(e.target.value),
+            <TextAreaField
+              textareaClassName='min-h-24'
+              label='Description'
+              value={currentTicket.description}
+              placeholder="Copy Jira Ticket's description (E.g., Create project plan, do project report...)"
+              error={fieldErrors.description}
+              rows={6}
+              onChange={e => {
+                setCurrentTicket({
+                  ...currentTicket,
+                  description: sanitizeDescription(e.target.value),
+                });
+                if (fieldErrors.description) {
+                  setFieldErrors(prev => {
+                    const next = { ...prev } as Record<string, string>;
+                    delete next.description;
+                    return next;
                   });
-                  if (fieldErrors.description) {
-                    setFieldErrors(prev => {
-                      const next = { ...prev } as Record<string, string>;
-                      delete next.description;
-                      return next;
-                    });
-                  }
-                }}
-              />
-              {fieldErrors.description && (
-                <p className='text-sm text-destructive mt-1'>
-                  {fieldErrors.description}
-                </p>
-              )}
-            </div>
+                }
+              }}
+              required
+            />
             <div className='flex justify-center'>
               <Button
                 aria-label='Add ticket'
@@ -787,7 +664,6 @@ const Form: React.FC = () => {
                 Add ticket
               </Button>
             </div>
-
             {tickets.length === 0 && (
               <div className='flex justify-end'>
                 <Button variant='outline' onClick={() => setStep(1)}>
@@ -805,63 +681,14 @@ const Form: React.FC = () => {
                   <h3 className='font-semibold mb-3'>
                     Added ticket ({tickets.length})
                   </h3>
-                  <div className='border rounded-lg overflow-hidden'>
-                    <Table>
-                      <TableHeader className='bg-muted'>
-                        <TableRow>
-                          <TableHead className='font-semibold'>
-                            Type Of Work
-                          </TableHead>
-                          <TableHead className='font-semibold'>
-                            Ticket ID
-                          </TableHead>
-                          <TableHead className='font-semibold'>
-                            Description
-                          </TableHead>
-                          <TableHead className='text-right font-semibold'>
-                            Time spent (hrs)
-                          </TableHead>
-                          <TableHead></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {tickets.map(ticket => (
-                          <TableRow key={ticket.id}>
-                            <TableCell>
-                              <Badge
-                                className={
-                                  workTypeMeta[ticket.typeOfWork]?.badgeClass
-                                }
-                              >
-                                {ticket.typeOfWork}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className='font-medium'>
-                              {ticket.ticketId}
-                            </TableCell>
-                            <TableCell className='truncate max-w-[280px]'>
-                              {ticket.description}
-                            </TableCell>
-                            <TableCell className='text-right'>
-                              {ticket.timeSpend}
-                            </TableCell>
-                            <TableCell className='text-right'>
-                              <Button
-                                className='hover:bg-red-200 dark:hover:bg-red-900'
-                                variant='ghost'
-                                size='icon'
-                                onClick={() => handleRemoveTicket(ticket.id)}
-                              >
-                                <Trash2 className='h-4 w-4' />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                  <TicketTable
+                    tickets={tickets}
+                    onRemoveTicket={handleRemoveTicket}
+                    workTypeMeta={workTypeMeta}
+                    showActions={true}
+                  />
                 </div>
-                <div className='flex justify-between items-center'>
+                <FormFooter align='between'>
                   <div className='text-sm text-muted-foreground'>
                     {tickets.length} tickets . Total {totalHours.toFixed(2)}{' '}
                     hrs/day
@@ -901,7 +728,7 @@ const Form: React.FC = () => {
                       <CheckCircle />
                     </Button>
                   </div>
-                </div>
+                </FormFooter>
               </div>
             )}
           </div>
@@ -912,104 +739,39 @@ const Form: React.FC = () => {
           <div className='space-y-6'>
             {/* Show progress bar if job is in progress */}
             {jobStatus === 'in-progress' && jobId && (
-              <div className='bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3'>
-                <div className='flex items-center justify-between'>
-                  <h3 className='font-semibold text-blue-900 dark:text-blue-100'>
-                    Processing Timesheets
-                  </h3>
-                  <span className='text-sm font-medium text-blue-700 dark:text-blue-300'>
-                    {jobProgress}%
-                  </span>
-                </div>
-                <div className='w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2.5'>
-                  <div
-                    className='bg-blue-600 dark:bg-blue-400 h-2.5 rounded-full transition-all duration-300'
-                    style={{ width: `${jobProgress}%` }}
-                  />
-                </div>
-                <div className='flex justify-between text-sm text-blue-700 dark:text-blue-300'>
-                  <span>
-                    Processed: {jobProcessed} / {jobTotal}
-                  </span>
-                  {jobFailed > 0 && (
-                    <span className='text-red-600 dark:text-red-400 font-medium'>
-                      Failed: {jobFailed}
-                    </span>
-                  )}
-                </div>
-                <p className='text-sm text-blue-600 dark:text-blue-400'>
-                  Please wait while we submit your timesheets. This may take a
-                  few moments...
-                </p>
-              </div>
+              <ProgressBar
+                progress={jobProgress}
+                processed={jobProcessed}
+                total={jobTotal}
+                failed={jobFailed}
+                status={jobStatus}
+              />
             )}
 
-            <div className='space-y-1'>
-              <Label className='font-semibold'>
-                Your Worklog Dates (
-                {dates.split(',').filter(Boolean).length || 0})
-              </Label>
-              <textarea
-                className='flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm'
-                value={dates}
-                readOnly
-              />
-            </div>
-            <div>
-              <div className='border rounded-lg overflow-hidden'>
-                <Table>
-                  <TableHeader className='bg-muted'>
-                    <TableRow>
-                      <TableHead className='font-semibold'>
-                        Type Of Work
-                      </TableHead>
-                      <TableHead className='font-semibold'>Ticket ID</TableHead>
-                      <TableHead className='font-semibold'>
-                        Description
-                      </TableHead>
-                      <TableHead className='text-right font-semibold'>
-                        Time spent (hrs)
-                      </TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tickets.map(ticket => (
-                      <TableRow key={ticket.id}>
-                        <TableCell>
-                          <Badge
-                            className={
-                              workTypeMeta[ticket.typeOfWork]?.badgeClass
-                            }
-                          >
-                            {ticket.typeOfWork}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className='font-medium'>
-                          {ticket.ticketId}
-                        </TableCell>
-                        <TableCell className='truncate max-w-[480px]'>
-                          {ticket.description}
-                        </TableCell>
-                        <TableCell className='text-right'>
-                          {ticket.timeSpend}
-                        </TableCell>
-                        <TableCell className='text-right'>
-                          <Button
-                            className='hover:bg-red-200 dark:hover:bg-red-900'
-                            variant='ghost'
-                            size='icon'
-                            onClick={() => handleRemoveTicket(ticket.id)}
-                          >
-                            <Trash2 className='h-4 w-4' />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+            <div className='space-y-2'>
+              <Label className='text-sm font-semibold'>FPT Account</Label>
+              <div className='rounded-lg border bg-card p-3'>
+                <p className='text-sm font-medium flex items-center gap-2'>
+                  <UserRoundCog className='h-4 w-4 text-muted-foreground' />
+                  {username}
+                </p>
               </div>
-              <div className='flex justify-between items-center mt-4'>
+            </div>
+            <TextAreaField
+              label={`Your Worklog Dates (${dates.split(',').filter(Boolean).length || 0})`}
+              value={dates}
+              rows={3}
+              disabled={true}
+              onChange={() => {}}
+            />
+            <div>
+              <TicketTable
+                tickets={tickets}
+                onRemoveTicket={handleRemoveTicket}
+                workTypeMeta={workTypeMeta}
+                showActions={true}
+              />
+              <FormFooter align='between' className='mt-4'>
                 <div className='text-sm text-muted-foreground'>
                   {tickets.length} tickets . Total {totalHours.toFixed(2)}{' '}
                   hrs/day
@@ -1028,33 +790,14 @@ const Form: React.FC = () => {
                     <ChevronLeft />
                     Back
                   </Button>
-                  <Button
-                    disabled={
-                      tickets.length === 0 ||
-                      isSubmitting ||
-                      jobStatus === 'in-progress'
-                    }
+                  <SubmitButton
+                    label='Submit'
+                    isLoading={isSubmitting || jobStatus === 'in-progress'}
+                    disabled={tickets.length === 0}
                     onClick={() => handleSubmit()}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Spinner />
-                        Submitting...
-                      </>
-                    ) : jobStatus === 'in-progress' ? (
-                      <>
-                        <Spinner />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        Submit
-                        <CheckCheck />
-                      </>
-                    )}
-                  </Button>
+                  />
                 </div>
-              </div>
+              </FormFooter>
             </div>
           </div>
         )}
