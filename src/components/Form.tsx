@@ -90,7 +90,7 @@ const TicketSchema = z.object({
   description: z.string().min(1, 'Description is required').max(1000),
   timeSpend: z
     .number()
-    .min(0.01, 'Minimum 0.01 hours')
+    .min(0.1, 'Minimum 0.1 hours')
     .max(8, 'Max 8 hours')
     .refine(v => /^\d+(\.\d{1,2})?$/.test(String(v)), {
       message: 'Max 2 decimal places',
@@ -219,7 +219,7 @@ const Form: React.FC = () => {
     id: '',
     typeOfWork: 'Create',
     description: '',
-    timeSpend: 0.25,
+    timeSpend: 0.5,
     ticketId: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -344,7 +344,7 @@ const Form: React.FC = () => {
       id: '',
       typeOfWork: 'Create',
       description: '',
-      timeSpend: 0.25,
+      timeSpend: 0.5,
       ticketId: currentTicket.ticketId, // Keep the Ticket ID
     });
   };
@@ -699,15 +699,32 @@ const Form: React.FC = () => {
                   <Input
                     type='number'
                     step='0.1'
-                    min='0.01'
+                    min='0.1'
                     max='8'
-                    value={currentTicket.timeSpend}
+                    placeholder='0.5'
+                    value={currentTicket.timeSpend || 0.5}
                     aria-invalid={fieldErrors.timeSpend ? true : undefined}
                     onChange={e => {
-                      setCurrentTicket({
-                        ...currentTicket,
-                        timeSpend: sanitizeHours(e.target.value),
-                      });
+                      const value = e.target.value;
+                      // Allow empty string for deletion
+                      if (value === '') {
+                        setCurrentTicket({
+                          ...currentTicket,
+                          timeSpend: 0.5,
+                        });
+                      } else {
+                        const sanitized = sanitizeHours(value);
+                        if (
+                          sanitized !== null &&
+                          sanitized !== undefined &&
+                          !isNaN(sanitized)
+                        ) {
+                          setCurrentTicket({
+                            ...currentTicket,
+                            timeSpend: sanitized,
+                          });
+                        }
+                      }
                       if (fieldErrors.timeSpend) {
                         setFieldErrors(prev => {
                           const next = { ...prev } as Record<string, string>;

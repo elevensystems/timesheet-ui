@@ -55,7 +55,7 @@ export function sanitizeDescription(input: string, maxLen = 1000): string {
 
 export function sanitizeHours(
   input: string | number,
-  min = 0.01,
+  min = 0.1,
   max = 8
 ): number {
   const num = typeof input === 'string' ? parseFloat(input) : input;
