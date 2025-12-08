@@ -12,7 +12,7 @@ interface TimesheetData {
   username: string;
   token: string;
   dates: string;
-  jiraInstance: 'jira9' | 'jiradc';
+  jiraInstance: 'jira9' | 'jiradc' | 'jira3';
   tickets?: Ticket[];
 }
 

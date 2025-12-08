@@ -201,7 +201,9 @@ const Form: React.FC = () => {
   const [username, setUsername] = useState('');
   const [token, setToken] = useState('');
   const [dates, setDates] = useState('');
-  const [jiraInstance, setJiraInstance] = useState<'jira9' | 'jiradc'>('jira9');
+  const [jiraInstance, setJiraInstance] = useState<
+    'jira9' | 'jiradc' | 'jira3'
+  >('jira9');
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [currentTicket, setCurrentTicket] = useState<Ticket>({
     id: '',
@@ -504,10 +506,13 @@ const Form: React.FC = () => {
               <SelectField
                 label='Jira System'
                 value={jiraInstance}
-                onChange={v => setJiraInstance(v as 'jira9' | 'jiradc')}
+                onChange={v =>
+                  setJiraInstance(v as 'jira9' | 'jiradc' | 'jira3')
+                }
                 options={[
                   { value: 'jira9', label: 'jira9' },
                   { value: 'jiradc', label: 'jiradc' },
+                  { value: 'jira3', label: 'jira3' },
                 ]}
                 className='w-[180px]'
               />
