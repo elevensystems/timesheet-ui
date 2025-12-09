@@ -475,7 +475,7 @@ const Form: React.FC = () => {
                     Click{' '}
                     <a
                       className='underline text-blue-600'
-                      href='https://insight.fsoft.com.vn/jira9/secure/ViewProfile.jspa'
+                      href={`https://insight.fsoft.com.vn/${jiraInstance}/secure/ViewProfile.jspa`}
                       target='_blank'
                       rel='noreferrer'
                     >
