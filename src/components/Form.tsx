@@ -189,9 +189,9 @@ const TYPE_OF_WORK_OPTIONS: Array<{
 ];
 
 const workTypeMeta = TYPE_OF_WORK_OPTIONS.reduce<
-  Record<string, { badgeClass: string }>
+  Record<string, { badgeClass: string; icon: React.ReactNode }>
 >((acc, cur) => {
-  acc[cur.value] = { badgeClass: cur.badgeClass };
+  acc[cur.value] = { badgeClass: cur.badgeClass, icon: cur.icon };
   return acc;
 }, {});
 
@@ -341,6 +341,43 @@ const Form: React.FC = () => {
 
   const handleRemoveTicket = (id: string) => {
     setTickets(tickets.filter(ticket => ticket.id !== id));
+  };
+
+  const handleEditTicket = (
+    id: string,
+    field: keyof Ticket,
+    value: string | number
+  ) => {
+    setHoursError('');
+    const updatedTickets = tickets.map(ticket => {
+      if (ticket.id === id) {
+        const updated = { ...ticket, [field]: value };
+        return updated;
+      }
+      return ticket;
+    });
+
+    // Validate the updated ticket
+    const updatedTicket = updatedTickets.find(t => t.id === id);
+    if (updatedTicket) {
+      try {
+        TicketSchema.parse(updatedTicket);
+        // Check total hours
+        const newTotal = updatedTickets.reduce((s, t) => s + t.timeSpend, 0);
+        if (newTotal > 8) {
+          setHoursError(
+            'Total hours per day cannot exceed 8.0 hrs. Please adjust your entries.'
+          );
+          return;
+        }
+        setTickets(updatedTickets);
+      } catch (e) {
+        // Show validation error as toast
+        const errors = zodToFieldErrors(e);
+        const errorMessage = Object.values(errors)[0] || 'Invalid value';
+        toast.error(errorMessage);
+      }
+    }
   };
 
   const handleNext = (e: React.FormEvent) => {
@@ -689,8 +726,11 @@ const Form: React.FC = () => {
                   <TicketTable
                     tickets={tickets}
                     onRemoveTicket={handleRemoveTicket}
+                    onEditTicket={handleEditTicket}
                     workTypeMeta={workTypeMeta}
+                    typeOfWorkOptions={TYPE_OF_WORK_OPTIONS}
                     showActions={true}
+                    allowEdit={true}
                   />
                 </div>
                 <FormFooter align='between'>
