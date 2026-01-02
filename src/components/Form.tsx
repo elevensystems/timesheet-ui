@@ -212,6 +212,7 @@ const Form: React.FC = () => {
     timeSpend: 0.5,
     ticketId: '',
   });
+  const [timeSpendInput, setTimeSpendInput] = useState<string>('0.5');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [hoursError, setHoursError] = useState<string>('');
@@ -292,11 +293,12 @@ const Form: React.FC = () => {
   const handleAddTicket = () => {
     setHoursError('');
     // sanitize inputs
+    const sanitizedHours = sanitizeHours(timeSpendInput);
     const sanitized = {
       id: '',
       typeOfWork: currentTicket.typeOfWork,
       description: sanitizeDescription(currentTicket.description),
-      timeSpend: sanitizeHours(currentTicket.timeSpend),
+      timeSpend: sanitizedHours,
       ticketId: sanitizeTicketId(currentTicket.ticketId),
     } as const;
 
@@ -337,6 +339,7 @@ const Form: React.FC = () => {
       timeSpend: 0.5,
       ticketId: currentTicket.ticketId, // Keep the Ticket ID
     });
+    setTimeSpendInput('0.5');
   };
 
   const handleRemoveTicket = (id: string) => {
@@ -638,30 +641,11 @@ const Form: React.FC = () => {
                 <InputField
                   label='Time Spent (hrs)'
                   type='number'
-                  value={String(currentTicket.timeSpend || 0.5)}
+                  value={timeSpendInput}
                   placeholder='0.5'
                   error={fieldErrors.timeSpend}
                   onChange={e => {
-                    const value = e.target.value;
-                    // Allow empty string for deletion
-                    if (value === '') {
-                      setCurrentTicket({
-                        ...currentTicket,
-                        timeSpend: 0.5,
-                      });
-                    } else {
-                      const sanitized = sanitizeHours(value);
-                      if (
-                        sanitized !== null &&
-                        sanitized !== undefined &&
-                        !isNaN(sanitized)
-                      ) {
-                        setCurrentTicket({
-                          ...currentTicket,
-                          timeSpend: sanitized,
-                        });
-                      }
-                    }
+                    setTimeSpendInput(e.target.value);
                     if (fieldErrors.timeSpend) {
                       setFieldErrors(prev => {
                         const next = { ...prev } as Record<string, string>;
