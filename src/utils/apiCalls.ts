@@ -38,8 +38,6 @@ interface CreateJobResponse {
   message: string;
 }
 
-const API_ENDPOINT = process.env.NEXT_PUBLIC_API_URL;
-
 /**
  * Legacy function - submits timesheet directly
  * @deprecated Use createTimesheetJob instead for better progress tracking
@@ -48,9 +46,7 @@ export async function submitTimesheet(
   data: TimesheetData
 ): Promise<{ success: boolean; message: string; submittedDates?: string[] }> {
   try {
-    // Get API URL from environment variable and construct the endpoint
-    const apiUrl = `${API_ENDPOINT}/timesheet`;
-    const response = await axios.post(apiUrl, data);
+    const response = await axios.post('/api/timesheet', data);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -72,25 +68,9 @@ export async function createTimesheetJob(
   data: TimesheetData
 ): Promise<CreateJobResponse> {
   try {
-    const apiUrl = `${API_ENDPOINT}/jobs`;
-
-    // Prepare request body
-    const requestBody = {
-      dates: data.dates,
-      jiraInstance: data.jiraInstance,
-      username: data.username,
-      tickets: data.tickets?.map(t => ({
-        ticketId: t.ticketId,
-        timeSpend: String(t.timeSpend), // Send as string to match backend expectations
-        description: t.description,
-        typeOfWork: t.typeOfWork,
-      })),
-    };
-
-    const response = await axios.post(apiUrl, requestBody, {
+    const response = await axios.post('/api/timesheet/jobs', data, {
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${data.token}`,
       },
     });
 
@@ -113,8 +93,9 @@ export async function createTimesheetJob(
  */
 export async function getJobStatus(jobId: string): Promise<JobStatus> {
   try {
-    const apiUrl = `${API_ENDPOINT}/jobs/status?jobId=${encodeURIComponent(jobId)}`;
-    const response = await axios.get(apiUrl);
+    const response = await axios.get(
+      `/api/timesheet/jobs/status?jobId=${encodeURIComponent(jobId)}`
+    );
     return response.data.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
