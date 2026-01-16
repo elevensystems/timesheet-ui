@@ -18,6 +18,7 @@ import {
   Tags,
   UserRoundCog,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { ZodError, z } from 'zod';
 
 import { Button } from '@/components/ui/button';
@@ -32,7 +33,6 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { toast } from '@/components/ui/sonner';
 import {
   Table,
   TableBody,

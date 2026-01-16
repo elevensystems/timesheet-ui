@@ -26,7 +26,7 @@ export default function RootLayout({
       <body className={`${ubuntu.variable} font-sans antialiased`}>
         <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
           {children}
-          <Toaster />
+          <Toaster position='top-center' />
         </ThemeProvider>
       </body>
     </html>
