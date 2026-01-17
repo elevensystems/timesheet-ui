@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import axios from 'axios';
 
-const API_ENDPOINT = process.env.NEXT_PUBLIC_API_URL;
+const API_ENDPOINT = process.env.API_URL;
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,16 +31,12 @@ export async function POST(request: NextRequest) {
     };
 
     // Call external API
-    const response = await axios.post(
-      `${API_ENDPOINT}/timesheet/jobs`,
-      requestBody,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const response = await axios.post(`${API_ENDPOINT}/jobs`, requestBody, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
     return NextResponse.json(response.data);
   } catch (error) {

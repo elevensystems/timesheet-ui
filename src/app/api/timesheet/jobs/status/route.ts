@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import axios from 'axios';
 
-const API_ENDPOINT = process.env.NEXT_PUBLIC_API_URL;
+const API_ENDPOINT = process.env.API_URL;
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     // Call external API
     const response = await axios.get(
-      `${API_ENDPOINT}/timesheet/jobs/status?jobId=${encodeURIComponent(jobId)}`
+      `${API_ENDPOINT}/jobs/status?jobId=${encodeURIComponent(jobId)}`
     );
 
     return NextResponse.json(response.data);
